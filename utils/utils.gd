@@ -170,7 +170,7 @@ func get_input_cursor_coords(input_cursor_position_ref: Ref, entries: Entry):
 				
 				if input_cursor_position_ref.value <= 0:
 					return [entry_index, digit_index]
-			Global.TYPE.POWER, Global.TYPE.LOGARITHM, Global.TYPE.FRACTION:
+			Global.TYPE.POWER, Global.TYPE.LOGARITHM, Global.TYPE.FRACTION, Global.TYPE.SQUARE_ROOT:
 				for component_name in entry.value:
 					var component_value: Entry = entry.value[component_name]
 					var default_coords: Array = [entry_index, component_name]

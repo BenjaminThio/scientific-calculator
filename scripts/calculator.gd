@@ -1,5 +1,7 @@
 extends VBoxContainer
 
+const RADICAL_SYMBOL_PACKED_SCENE: PackedScene = preload("res://instances/radical_symbol.tscn")
+
 var is_shifted: bool = false
 var entries: Entry = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.PLAIN_PLACEHOLDER)])
 var previous_result: float = 0
@@ -57,7 +59,7 @@ func calculator_callback(option: Global.OPTIONS) -> void:
 				entries.value.append(Entry.new(Global.TYPE.FRACTION, {numerator = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.PLACEHOLDER)]), denominator = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.PLACEHOLDER)])}))
 				input_cursor_position += 1
 			Global.OPTIONS.SQUARE_ROOT:
-				entries.value.append(Entry.new(Global.TYPE.SQUARE_ROOT, {index = Entry.new(Global.TYPE.NUMBER, '2'), radicand = [Entry.new(Global.TYPE.NUMBER, '25')]}))
+				entries.value.append(Entry.new(Global.TYPE.SQUARE_ROOT, {index = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.NUMBER, '2')]), radicand = Entry.new(Global.TYPE.ENTRIES, [Entry.new()])}))
 			Global.OPTIONS.POWER_OF_TWO:
 				create_power_entry('2')
 			Global.OPTIONS.POWER:
@@ -437,6 +439,11 @@ func compile_expression(expression_entries: Entry) -> String:
 				var denominator = entry.value.denominator
 				
 				expression += '{numerator}/{denominator}'.format({numerator = compile_expression(numerator), denominator = compile_expression(denominator)})
+			Global.TYPE.SQUARE_ROOT:
+				#var index = entry.value.index
+				var radicand = entry.value.radicand
+				
+				expression += 'sqrt({radicand})'.format({radicand = compile_expression(radicand)})
 			_:
 				expression += str(entry.value)
 	
@@ -455,7 +462,7 @@ enum ALIGNMENT {
 	END,
 }
 
-"""
+
 func blink(node: Node):
 	var tween: Tween = create_tween().set_trans(Tween.TRANS_EXPO)
 	
@@ -473,13 +480,12 @@ func blink(node: Node):
 			else:
 				return
 		)
-"""
 
 func render_input_cursor(parent: Control, cursor_alignment: ALIGNMENT, input_cursor_position_counter: Ref):
 	if input_cursor_position_counter.value == input_cursor_position:
 		var input_cursor: ColorRect = ColorRect.new()
 		
-		#blink(input_cursor)
+		blink(input_cursor)
 		
 		parent.resized.connect(
 			func():
@@ -598,16 +604,13 @@ func secondary_display(expression_entries: Entry, height: int = 0, input_cursor_
 				entry_components.append_array(secondary_display(base, -50, input_cursor_position_counter))
 				entry_components.append_array(secondary_display(argument, 0, input_cursor_position_counter))
 			Global.TYPE.SQUARE_ROOT:
-				var index_label: Label = Utils.create_label()
+				var radical_symbol: HBoxContainer = RADICAL_SYMBOL_PACKED_SCENE.instantiate()
+				var index: Entry = entry.value.index
+				var radicand: Entry = entry.value.radicand
 				
-				index_label.text = entry.value.index.value
-				entries_line.add_child(index_label)
-				index_label.draw_polyline([
-					Vector2(size.x, 0),
-					Vector2(size.x / 3, size.y),
-					Vector2(size.x / 5, size.y * 4 / 5),
-					Vector2(0, size.y * 6 / 7)
-				], Color.WHITE, 2.0)
+				radical_symbol.add_index_nodes.call_deferred(secondary_display(index, 0, input_cursor_position_counter))
+				radical_symbol.add_radicand_nodes.call_deferred(secondary_display(radicand, 0, input_cursor_position_counter))
+				entry_components.append(radical_symbol)
 			Global.TYPE.FRACTION:
 				var fraction_container: VBoxContainer = VBoxContainer.new()
 				var fraction_bar: ColorRect = ColorRect.new()
