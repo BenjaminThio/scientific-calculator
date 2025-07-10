@@ -19,10 +19,10 @@ metadata/_edit_group_ = true
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="EntriesLine" type="HBoxContainer" parent="Display"]
-custom_minimum_size = Vector2(0, 64)
+[node name="ScrollContainer" type="ScrollContainer" parent="Display"]
+custom_minimum_size = Vector2(0, 128)
 layout_mode = 2
-theme_override_constants/separation = 0
+follow_focus = true
 
 [node name="ResultLine" type="Label" parent="Display"]
 custom_minimum_size = Vector2(0, 64)

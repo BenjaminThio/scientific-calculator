@@ -14,7 +14,7 @@ func _draw() -> void:
 		Vector2(index_container.size.x + radical_side.size.x / 3.0, radical_side.size.y),
 		Vector2(index_container.size.x + radical_side.size.x / 6.0, radical_side.size.y - 12.0),
 		Vector2(index_container.size.x, radical_side.size.y - 8.0)
-	], Color.WHITE, 2.0)
+	], Color.WHITE, 1.5, true)
 
 func draw_lines(points: PackedVector2Array, color: Color, width: float, antialiased: bool = false):
 	var previous_point: Vector2

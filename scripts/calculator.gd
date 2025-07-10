@@ -6,16 +6,54 @@ var is_shifted: bool = false
 var entries: Entry = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.PLAIN_PLACEHOLDER)])
 var previous_result: float = 0
 var input_cursor_position: int = 1
+var page: Global.PAGES = Global.PAGES.MAIN
+var constant_category: Global.CONSTANT_CATEGORIES = Global.CONSTANT_CATEGORIES.NULL
 
-@onready var entries_line: HBoxContainer = $Display/EntriesLine
+@onready var scroll_container: ScrollContainer = $Display/ScrollContainer
 @onready var result_line: Label = $Display/ResultLine
 @onready var keyboard_container: VBoxContainer = $Keyboard
+
+func shift():
+	is_shifted = not is_shifted
+	
+	refresh_keyboard()
+	
+	if is_shifted:
+		construct_calculator(Global.SHIFTED_KEYBOARD)
+	else:
+		construct_calculator(Global.KEYBOARD)
 
 func _ready() -> void:
 	display()
 	construct_calculator(Global.KEYBOARD)
 
 func calculator_callback(option: Global.OPTIONS) -> void:
+	match page:
+		Global.PAGES.MAIN:
+			pass
+		Global.PAGES.CONSTANT_CATEGORY:
+			match option:
+				Global.OPTIONS.SHIFT:
+					shift()
+				Global.OPTIONS.ALL_CLEAR:
+					page = Global.PAGES.MAIN
+			
+			display()
+			return
+		Global.PAGES.CONSTANT:
+			match option:
+				Global.OPTIONS.LEFT:
+					page = Global.PAGES.CONSTANT_CATEGORY
+				Global.OPTIONS.ALL_CLEAR:
+					page = Global.PAGES.MAIN
+				Global.OPTIONS.SHIFT:
+					shift()
+			
+			display()
+			return
+		_:
+			return
+	
 	if option >= 0 && option <= 9:
 		create_number_entry(str(option))
 	else:
@@ -60,6 +98,10 @@ func calculator_callback(option: Global.OPTIONS) -> void:
 				input_cursor_position += 1
 			Global.OPTIONS.SQUARE_ROOT:
 				entries.value.append(Entry.new(Global.TYPE.SQUARE_ROOT, {index = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.NUMBER, '2')]), radicand = Entry.new(Global.TYPE.ENTRIES, [Entry.new()])}))
+			Global.OPTIONS.CUBE_ROOT:
+				entries.value.append(Entry.new(Global.TYPE.SQUARE_ROOT, {index = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.NUMBER, '3')]), radicand = Entry.new(Global.TYPE.ENTRIES, [Entry.new()])}))
+			Global.OPTIONS.ROOT:
+				entries.value.append(Entry.new(Global.TYPE.SQUARE_ROOT, {index = Entry.new(Global.TYPE.ENTRIES, [Entry.new()]), radicand = Entry.new(Global.TYPE.ENTRIES, [Entry.new()])}))
 			Global.OPTIONS.POWER_OF_TWO:
 				create_power_entry('2')
 			Global.OPTIONS.POWER:
@@ -115,6 +157,7 @@ func calculator_callback(option: Global.OPTIONS) -> void:
 				
 				if result != null:
 					previous_result = result
+				
 				result_line.text = str(result)
 			Global.OPTIONS.OFF:
 				get_tree().quit()
@@ -138,15 +181,9 @@ func calculator_callback(option: Global.OPTIONS) -> void:
 					exponent = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.NUMBER, '3')])
 				}))
 			Global.OPTIONS.ABSOLUTE:
-				entries.value.append(Entry.new(Global.TYPE.MODULUS, Entry.new()))
+				entries.value.append(Entry.new(Global.TYPE.MODULUS, {arg = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.NUMBER, '-15')])}))
 			Global.OPTIONS.FACTORIAL:
-				if entries.value.size() > 1:
-					var last_entry: Entry = entries[entries.value.size() - 1]
-					
-					entries.value.pop_back()
-					entries.value.append(Entry.new(Global.TYPE.FACTORIAL, [last_entry]))
-				else:
-					entries.value.append(Entry.new(Global.TYPE.FACTORIAL, Entry.new(Global.TYPE.ENTRIES, [Entry.new()])))
+				entries.value.append(Entry.new(Global.TYPE.FACTORIAL, {arg = Entry.new(Global.TYPE.ENTRIES, [Entry.new()])}))
 			Global.OPTIONS.LOG:
 				entries.value.append(Entry.new(Global.TYPE.FUNCTION, 'log_with_base(10,'))
 			Global.OPTIONS.PERMUTATION, Global.OPTIONS.COMBINATION:
@@ -156,17 +193,24 @@ func calculator_callback(option: Global.OPTIONS) -> void:
 					Global.OPTIONS.COMBINATION:
 						entry_type = Global.TYPE.COMBINATION
 				
-				if entries.value.size() > 0:
+				if entries.value.size() > 1:
 					var last_entry: Entry = entries.value[entries.value.size() - 1]
 					
 					entries.value.pop_back()
-					entries.value.append(Entry.new(entry_type, {n = Entry.new(Global.TYPE.ENTRIES, [last_entry]), r = Entry.new(Global.TYPE.ENTRIES, [Entry.new()])}))
+					entries.value.append(Entry.new(entry_type, {
+						n = Entry.new(Global.TYPE.ENTRIES, [last_entry]),
+						r = Entry.new(Global.TYPE.ENTRIES, [Entry.new()])
+					}))
 				else:
-					entries.value.append(Entry.new(entry_type, {n = Entry.new(Global.TYPE.ENTRIES, [Entry.new()]), r = Entry.new(Global.TYPE.ENTRIES, [Entry.new()])}))
+					entries.value.append(Entry.new(entry_type, {
+						n = Entry.new(Global.TYPE.ENTRIES, [Entry.new()]),
+						r = Entry.new(Global.TYPE.ENTRIES, [Entry.new()])
+					}))
+			Global.OPTIONS.CONSTANT:
+				page = Global.PAGES.CONSTANT_CATEGORY
 	
-	refresh()
 	display()
-	#print(Utils.json(entries))
+	print(Utils.json(entries))
 
 func refresh_keyboard() -> void:
 	if keyboard_container.get_child_count() > 0:
@@ -207,6 +251,9 @@ func create_common_entry(type: Global.TYPE, value: String) -> void:
 		
 		#print(current_entry)
 		match current_entry.type:
+			Global.TYPE.PLACEHOLDER:
+				current_entry.type = type
+				current_entry.value = value
 			Global.TYPE.NUMBER:
 				var slice_target = outer_entry.value
 				
@@ -394,67 +441,68 @@ func construct_calculator(keyboard) -> void:
 func compile_expression(expression_entries: Entry) -> String:
 	var expression: String = ''
 	
-	for entry in expression_entries.value:
-		match entry.type:
-			Global.TYPE.OPERATOR:
-				match entry.value:
-					'×':
-						expression += '*'
-					'÷':
-						expression += '/'
-					_:
-						expression += entry.value
-			Global.TYPE.POWER:
-				var base = entry.value.base
-				var exponent = entry.value.exponent
-				
-				expression += 'pow({base}, {exponent})'.format({base = compile_expression(base), exponent = compile_expression(exponent)})
-			Global.TYPE.LOGARITHM:
-				var base = entry.value.base
-				var argument = entry.value.argument
-				
-				expression += 'log_with_base({base}, {value})'.format({base = compile_expression(base), value = compile_expression(argument)})
-			Global.TYPE.NUMBER:
-				if '.' not in entry.value:
-					expression += entry.value + '.0'
-				else:
-					expression += entry.value
-			Global.TYPE.PERMUTATION, Global.TYPE.COMBINATION:
-				var n = entry.value.n
-				var r = entry.value.r
-				
+	match expression_entries.type:
+		Global.TYPE.ENTRIES:
+			for entry in expression_entries.value:
 				match entry.type:
-					Global.TYPE.PERMUTATION:
-						expression += 'permutation({n}, {r})'.format({n = compile_expression(n), r = compile_expression(r)})
-					Global.TYPE.COMBINATION:
-						expression += 'combination({n}, {r})'.format({n = compile_expression(n), r = compile_expression(r)})
-			Global.TYPE.MODULUS:
-				expression += 'abs({arg})'.format({arg = compile_expression(entry)})
-			Global.TYPE.FACTORIAL:
-				expression += 'factorial({arg})'.format({arg = compile_expression(entry)})
-			Global.TYPE.PLAIN_PLACEHOLDER:
-				pass
-			Global.TYPE.FRACTION:
-				var numerator = entry.value.numerator
-				var denominator = entry.value.denominator
-				
-				expression += '{numerator}/{denominator}'.format({numerator = compile_expression(numerator), denominator = compile_expression(denominator)})
-			Global.TYPE.SQUARE_ROOT:
-				#var index = entry.value.index
-				var radicand = entry.value.radicand
-				
-				expression += 'sqrt({radicand})'.format({radicand = compile_expression(radicand)})
-			_:
-				expression += str(entry.value)
+					Global.TYPE.OPERATOR:
+						match entry.value:
+							'×':
+								expression += '*'
+							'÷':
+								expression += '/'
+							_:
+								expression += entry.value
+					Global.TYPE.POWER:
+						var base = entry.value.base
+						var exponent = entry.value.exponent
+						
+						expression += 'pow({base}, {exponent})'.format({base = compile_expression(base), exponent = compile_expression(exponent)})
+					Global.TYPE.LOGARITHM:
+						var base = entry.value.base
+						var argument = entry.value.argument
+						
+						expression += 'log_with_base({base}, {value})'.format({base = compile_expression(base), value = compile_expression(argument)})
+					Global.TYPE.NUMBER:
+						if '.' not in entry.value:
+							expression += entry.value + '.0'
+						else:
+							expression += entry.value
+					Global.TYPE.PERMUTATION, Global.TYPE.COMBINATION:
+						var n = entry.value.n
+						var r = entry.value.r
+						
+						match entry.type:
+							Global.TYPE.PERMUTATION:
+								expression += 'permutation({n}, {r})'.format({n = compile_expression(n), r = compile_expression(r)})
+							Global.TYPE.COMBINATION:
+								expression += 'combination({n}, {r})'.format({n = compile_expression(n), r = compile_expression(r)})
+					Global.TYPE.MODULUS:
+						var arg = entry.value.arg
+						
+						expression += 'abs({arg})'.format({arg = compile_expression(arg)})
+					Global.TYPE.FACTORIAL:
+						var arg = entry.value.arg
+						
+						expression += 'factorial({arg})'.format({arg = compile_expression(arg)})
+					Global.TYPE.PLAIN_PLACEHOLDER:
+						pass
+					Global.TYPE.FRACTION:
+						var numerator = entry.value.numerator
+						var denominator = entry.value.denominator
+						
+						expression += '{numerator}/{denominator}'.format({numerator = compile_expression(numerator), denominator = compile_expression(denominator)})
+					Global.TYPE.SQUARE_ROOT:
+						var index = entry.value.index
+						var radicand = entry.value.radicand
+						
+						expression += 'pow({radicand},1/{index})'.format({index = compile_expression(index), radicand = compile_expression(radicand)})
+					_:
+						expression += str(entry.value)
+		_:
+			print(Utils.get_entry_type_name(expression_entries.type))
 	
 	return expression
-
-func refresh() -> void:
-	if entries_line.get_child_count() > 0:
-		for entry_node in entries_line.get_children():
-			entries_line.remove_child(entry_node)
-			entry_node.queue_free()
-			#entry_node.free()
 
 enum ALIGNMENT {
 	BEGIN,
@@ -463,6 +511,7 @@ enum ALIGNMENT {
 }
 
 
+"""
 func blink(node: Node):
 	var tween: Tween = create_tween().set_trans(Tween.TRANS_EXPO)
 	
@@ -480,12 +529,13 @@ func blink(node: Node):
 			else:
 				return
 		)
+"""
 
 func render_input_cursor(parent: Control, cursor_alignment: ALIGNMENT, input_cursor_position_counter: Ref):
 	if input_cursor_position_counter.value == input_cursor_position:
 		var input_cursor: ColorRect = ColorRect.new()
 		
-		blink(input_cursor)
+		#blink(input_cursor)
 		
 		parent.resized.connect(
 			func():
@@ -529,11 +579,82 @@ func primary_display(input_cursor_position_counter: Ref, height: int, cursor_ali
 	return entry_container
 
 func display():
-	var entry_components: Array[Node] = secondary_display(entries)
+	Utils.remove_children(scroll_container) #refresh()
 	
-	if entry_components.size() > 0:
-		for entry_component in entry_components:
-			entries_line.add_child(entry_component)
+	match page:
+		Global.PAGES.MAIN:
+			var entries_line: HBoxContainer = HBoxContainer.new()
+			var entry_components: Array[Node] = secondary_display(entries)
+			
+			entries_line.add_theme_constant_override('separation', 0)
+			entries_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			
+			if entry_components.size() > 0:
+				for entry_component in entry_components:
+					entries_line.add_child(entry_component)
+			
+			scroll_container.add_child(entries_line)
+		Global.PAGES.CONSTANT_CATEGORY:
+			var constant_categories_container: VBoxContainer = VBoxContainer.new()
+			
+			constant_categories_container.add_theme_constant_override('separation', 0)
+			
+			for constant_category_index in range(Global.CONSTANTS.size()):
+				var constant_category_name: String = Global.CONSTANTS.keys()[constant_category_index].capitalize()
+				var constant_category_button: Button = Button.new()
+				
+				constant_category_button.add_theme_font_override('font', Global.FONT)
+				constant_category_button.add_theme_font_size_override('font_size', 20)
+				constant_category_button.flat = true
+				constant_category_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+				constant_category_button.pressed.connect(set_constant_category.bind(constant_category_index))
+				constant_category_button.text = str(constant_category_index + 1) + '. ' + constant_category_name
+				constant_categories_container.add_child(constant_category_button)
+			
+			scroll_container.add_child(constant_categories_container)
+		Global.PAGES.CONSTANT:
+			match constant_category:
+				Global.CONSTANT_CATEGORIES.NULL:
+					pass
+				_:
+					var category_name: String = Global.CONSTANT_CATEGORIES.keys()[constant_category]
+					var grouped_constants: Array[Array] = Utils.group(Utils.dictionary_to_key_value_pairs(Global.CONSTANTS[category_name]), 2)
+					var constants_container: VBoxContainer = VBoxContainer.new()
+					
+					for grouped_constant_props in grouped_constants:
+						var group_container: HBoxContainer = HBoxContainer.new()
+						
+						#group_container.add_theme_constant_override('separation', 0)
+						
+						for constant_props in grouped_constant_props:
+							var constant_name: String = constant_props.key.capitalize()
+							var constant: Dictionary = constant_props.value
+							var constant_button: Button = Button.new()
+							
+							constant_button.add_theme_font_override('font', Global.FONT)
+							constant_button.add_theme_font_size_override('font_size', 20)
+							constant_button.flat = true
+							constant_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+							constant_button.custom_minimum_size = Vector2(250, 0)
+							constant_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+							constant_button.text = constant.display + ', ' + constant_name
+							
+							if 'exp' in constant:
+								constant_button.pressed.connect(print.bind('IN1'))
+							else:
+								constant_button.pressed.connect(print.bind('IN2'))
+							
+							group_container.add_child(constant_button)
+						
+						constants_container.add_child(group_container)
+					
+					scroll_container.add_child(constants_container)
+
+func set_constant_category(category: Global.CONSTANT_CATEGORIES):
+	page = Global.PAGES.CONSTANT
+	constant_category = category
+	
+	display()
 
 func secondary_display(expression_entries: Entry, height: int = 0, input_cursor_position_counter: Ref = Ref.new(0)):
 	var entry_components: Array[Node] = []
@@ -588,6 +709,7 @@ func secondary_display(expression_entries: Entry, height: int = 0, input_cursor_
 				input_cursor_position_counter.value += 1
 				placeholder_label.text = ' '
 				placeholder_label.add_theme_stylebox_override('normal', placeholder_style)
+				#print('IN')
 				
 				render_input_cursor(placeholder_label, ALIGNMENT.CENTER, input_cursor_position_counter)
 			Global.TYPE.LOGARITHM:
@@ -670,7 +792,7 @@ func secondary_display(expression_entries: Entry, height: int = 0, input_cursor_
 				var n = entry.value.n
 				var r = entry.value.r
 				
-				secondary_display(n, 50, input_cursor_position_counter)
+				entry_components.append_array(secondary_display(n, 50, input_cursor_position_counter))
 				
 				var label: Label = Utils.create_label()
 				
@@ -682,27 +804,31 @@ func secondary_display(expression_entries: Entry, height: int = 0, input_cursor_
 					Global.TYPE.COMBINATION:
 						label.text = 'C'
 				
-				entries_line.add_child(label)
+				entry_components.append(label)
 				
-				secondary_display(r, -50, input_cursor_position_counter)
+				entry_components.append_array(secondary_display(r, -50, input_cursor_position_counter))
 			Global.TYPE.MODULUS:
+				var modulus_container: HBoxContainer = HBoxContainer.new()
 				var line: ColorRect = ColorRect.new()
 				
 				line.custom_minimum_size = Vector2(2, 0)
 				
-				entries_line.add_child(line)
+				modulus_container.add_theme_constant_override('separation', 0)
+				modulus_container.add_child(line)
 				
-				secondary_display(entry.value, input_cursor_position_counter.value, input_cursor_position_counter)
+				for node in secondary_display(entry.value.arg, 0, input_cursor_position_counter): # input_cursor_position_counter.value, input_cursor_position_counter):
+					modulus_container.add_child(node)
 				
-				entries_line.add_child(line.duplicate())
+				modulus_container.add_child(line.duplicate())
+				entry_components.append(modulus_container)
 			Global.TYPE.FACTORIAL:
 				var exclamation_mark_label: Label = Utils.create_label()
 				
 				exclamation_mark_label.text = '!'
 				exclamation_mark_label.add_theme_font_size_override('font_size', 30)
-				secondary_display(entry.value, input_cursor_position_counter.value, input_cursor_position_counter)
+				entry_components.append_array(secondary_display(entry.value.arg, 0, input_cursor_position_counter)) # input_cursor_position_counter.value, input_cursor_position_counter))
 				
-				entries_line.add_child(exclamation_mark_label)
+				entry_components.append(exclamation_mark_label)
 			_:
 				entry_components.append(primary_display(input_cursor_position_counter, height, ALIGNMENT.END, entry.value))
 	
