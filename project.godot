@@ -19,6 +19,7 @@ config/icon="res://sprites/icon.svg"
 Global="*res://scripts/global.gd"
 Utils="*res://utils/utils.gd"
 time="*res://utils/time.gd"
+Database="*res://scripts/database.gd"
 
 [display]
 

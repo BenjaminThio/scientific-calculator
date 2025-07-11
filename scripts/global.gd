@@ -1,25 +1,29 @@
 extends Node
 
-enum TYPE {
+enum ENTRY_TYPES {
+	# Base Entry Type
 	ENTRIES,
+	# Primary Entry Types
 	PLAIN_PLACEHOLDER,
 	PLACEHOLDER,
 	NUMBER,
+	OPERATOR,
+	CONSTANT,
+	FUNCTION,
+	VARIABLE,
+	# Secondary Entry Types
 	POWER,
 	LOGARITHM,
-	OPERATOR,
-	VARIABLE,
-	FUNCTION,
 	SQUARE_ROOT,
-	CONSTANT,
-	PERMUTATION,
-	COMBINATION,
 	MODULUS,
 	FACTORIAL,
+	PERMUTATION,
+	COMBINATION,
 	FRACTION,
+	# Error Entry Type
 	ERROR
 }
-enum OUTPUT_TYPE {
+enum OUTPUT_TYPES {
 	FRACTION,
 	DECIMAL
 }
@@ -94,7 +98,7 @@ enum OPTIONS {
 	PERCENTAGE,
 	APPROXIMATE
 }
-const FONT: FontFile = preload("res://fonts/fusion_pixel_10px_monospaced.otf")
+const DEFAULT_FONT: FontFile = preload("res://fonts/fusion_pixel_10px_monospaced.otf")
 const KEYBOARD = [
 	[
 		['SHIFT', OPTIONS.SHIFT],
@@ -311,7 +315,7 @@ const CONSTANTS: Dictionary[String, Dictionary] = {
 		CELSIUS_TEMPERATURE = {display = 't', value = 273.15}
 	}
 }
-enum VARIANT_TYPE {
+enum VARIANT_TYPES {
 	TYPE_NIL,
 	TYPE_BOOL,
 	TYPE_INT,
@@ -353,20 +357,10 @@ enum VARIANT_TYPE {
 	TYPE_PACKED_VECTOR4_ARRAY,
 	TYPE_MAX
 }
-enum PAGES {
+enum TABS {
 	MAIN,
 	CONSTANT_CATEGORY,
 	CONSTANT
 }
 
-var output_type: OUTPUT_TYPE = OUTPUT_TYPE.FRACTION
-
-"""
-func _ready():
-	var counter: int = 0
-	
-	for category in CONSTANTS:
-		counter += CONSTANTS[category].size()
-	
-	print(counter)
-"""
+var output_type: OUTPUT_TYPES = OUTPUT_TYPES.FRACTION

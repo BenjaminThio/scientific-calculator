@@ -3,17 +3,16 @@ extends VBoxContainer
 const RADICAL_SYMBOL_PACKED_SCENE: PackedScene = preload("res://instances/radical_symbol.tscn")
 
 var is_shifted: bool = false
-var entries: Entry = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.PLAIN_PLACEHOLDER)])
-var previous_result: float = 0
+var entries: Entry = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new(Global.ENTRY_TYPES.PLAIN_PLACEHOLDER)])
 var input_cursor_position: int = 1
-var page: Global.PAGES = Global.PAGES.MAIN
+var tab: Global.TABS = Global.TABS.MAIN
 var constant_category: Global.CONSTANT_CATEGORIES = Global.CONSTANT_CATEGORIES.NULL
 
 @onready var scroll_container: ScrollContainer = $Display/ScrollContainer
 @onready var result_line: Label = $Display/ResultLine
 @onready var keyboard_container: VBoxContainer = $Keyboard
 
-func shift():
+func shift() -> void:
 	is_shifted = not is_shifted
 	
 	refresh_keyboard()
@@ -28,24 +27,24 @@ func _ready() -> void:
 	construct_calculator(Global.KEYBOARD)
 
 func calculator_callback(option: Global.OPTIONS) -> void:
-	match page:
-		Global.PAGES.MAIN:
+	match tab:
+		Global.TABS.MAIN:
 			pass
-		Global.PAGES.CONSTANT_CATEGORY:
+		Global.TABS.CONSTANT_CATEGORY:
 			match option:
 				Global.OPTIONS.SHIFT:
 					shift()
 				Global.OPTIONS.ALL_CLEAR:
-					page = Global.PAGES.MAIN
+					tab = Global.TABS.MAIN
 			
 			display()
 			return
-		Global.PAGES.CONSTANT:
+		Global.TABS.CONSTANT:
 			match option:
 				Global.OPTIONS.LEFT:
-					page = Global.PAGES.CONSTANT_CATEGORY
+					tab = Global.TABS.CONSTANT_CATEGORY
 				Global.OPTIONS.ALL_CLEAR:
-					page = Global.PAGES.MAIN
+					tab = Global.TABS.MAIN
 				Global.OPTIONS.SHIFT:
 					shift()
 			
@@ -94,43 +93,43 @@ func calculator_callback(option: Global.OPTIONS) -> void:
 			Global.OPTIONS.DOWN:
 				pass
 			Global.OPTIONS.FRACTION:
-				entries.value.append(Entry.new(Global.TYPE.FRACTION, {numerator = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.PLACEHOLDER)]), denominator = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.PLACEHOLDER)])}))
+				entries.value.append(Entry.new(Global.ENTRY_TYPES.FRACTION, {numerator = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new(Global.ENTRY_TYPES.PLACEHOLDER)]), denominator = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new(Global.ENTRY_TYPES.PLACEHOLDER)])}))
 				input_cursor_position += 1
 			Global.OPTIONS.SQUARE_ROOT:
-				entries.value.append(Entry.new(Global.TYPE.SQUARE_ROOT, {index = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.NUMBER, '2')]), radicand = Entry.new(Global.TYPE.ENTRIES, [Entry.new()])}))
+				entries.value.append(Entry.new(Global.ENTRY_TYPES.SQUARE_ROOT, {index = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new(Global.ENTRY_TYPES.NUMBER, '2')]), radicand = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new()])}))
 			Global.OPTIONS.CUBE_ROOT:
-				entries.value.append(Entry.new(Global.TYPE.SQUARE_ROOT, {index = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.NUMBER, '3')]), radicand = Entry.new(Global.TYPE.ENTRIES, [Entry.new()])}))
+				entries.value.append(Entry.new(Global.ENTRY_TYPES.SQUARE_ROOT, {index = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new(Global.ENTRY_TYPES.NUMBER, '3')]), radicand = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new()])}))
 			Global.OPTIONS.ROOT:
-				entries.value.append(Entry.new(Global.TYPE.SQUARE_ROOT, {index = Entry.new(Global.TYPE.ENTRIES, [Entry.new()]), radicand = Entry.new(Global.TYPE.ENTRIES, [Entry.new()])}))
+				entries.value.append(Entry.new(Global.ENTRY_TYPES.SQUARE_ROOT, {index = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new()]), radicand = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new()])}))
 			Global.OPTIONS.POWER_OF_TWO:
 				create_power_entry('2')
 			Global.OPTIONS.POWER:
 				create_power_entry('')
 			Global.OPTIONS.LOGARITHMS:
-				entries.value.append(Entry.new(Global.TYPE.LOGARITHM, {
-					base = Entry.new(Global.TYPE.ENTRIES, [Entry.new()]),
-					argument = Entry.new(Global.TYPE.ENTRIES, [Entry.new()])
+				entries.value.append(Entry.new(Global.ENTRY_TYPES.LOGARITHM, {
+					base = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new()]),
+					argument = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new()])
 				}))
 			Global.OPTIONS.NATURAL_LOGARITHM:
-				create_common_entry(Global.TYPE.FUNCTION, 'ln(')
+				create_common_entry(Global.ENTRY_TYPES.FUNCTION, 'ln(') # log(
 			Global.OPTIONS.POWER_OF_NEGATIVE_ONE:
 				create_power_entry('-1')
 			Global.OPTIONS.SINE:
-				create_common_entry(Global.TYPE.FUNCTION, 'sin(')
+				create_common_entry(Global.ENTRY_TYPES.FUNCTION, 'sin(')
 			Global.OPTIONS.COSINE:
-				create_common_entry(Global.TYPE.FUNCTION, 'cos(')
+				create_common_entry(Global.ENTRY_TYPES.FUNCTION, 'cos(')
 			Global.OPTIONS.TANGENT:
-				create_common_entry(Global.TYPE.FUNCTION, 'tan(')
+				create_common_entry(Global.ENTRY_TYPES.FUNCTION, 'tan(')
 			Global.OPTIONS.LEFT_PARENTHESIS:
-				create_common_entry(Global.TYPE.OPERATOR, '(')
+				create_common_entry(Global.ENTRY_TYPES.OPERATOR, '(')
 			Global.OPTIONS.RIGHT_PARENTHESIS:
-				create_common_entry(Global.TYPE.OPERATOR, ')')
+				create_common_entry(Global.ENTRY_TYPES.OPERATOR, ')')
 			Global.OPTIONS.DELETE:
 				if entries.value.size() > 0:
 					var last_entry: Entry = entries.value[entries.value.size() - 1]
 					
 					match last_entry.type:
-						Global.TYPE.NUMBER:
+						Global.ENTRY_TYPES.NUMBER:
 							if last_entry.value.length() > 1:
 								entries.value[entries.value.size() - 1].value = Utils.backspace(last_entry.value)
 							else:
@@ -140,77 +139,78 @@ func calculator_callback(option: Global.OPTIONS) -> void:
 			Global.OPTIONS.ALL_CLEAR:
 				entries.value.clear()
 			Global.OPTIONS.MULTIPLY:
-				create_common_entry(Global.TYPE.OPERATOR, '×')
+				create_common_entry(Global.ENTRY_TYPES.OPERATOR, '×')
 			Global.OPTIONS.DIVIDE:
-				create_common_entry(Global.TYPE.OPERATOR, '÷')
+				create_common_entry(Global.ENTRY_TYPES.OPERATOR, '÷')
 			Global.OPTIONS.PLUS:
-				create_common_entry(Global.TYPE.OPERATOR, '+')
+				create_common_entry(Global.ENTRY_TYPES.OPERATOR, '+')
 			Global.OPTIONS.MINUS:
-				create_common_entry(Global.TYPE.OPERATOR, '-')
+				create_common_entry(Global.ENTRY_TYPES.OPERATOR, '-')
 			Global.OPTIONS.DOT:
 				create_number_entry('.')
 			Global.OPTIONS.ANSWER:
-				create_common_entry(Global.TYPE.VARIABLE, 'ANS')
+				create_common_entry(Global.ENTRY_TYPES.VARIABLE, 'ANS')
 			Global.OPTIONS.EQUAL:
 				#print(compile_expression(entries))
-				var result = Utils.evaluate(compile_expression(entries), ['ANS'], [previous_result])
+				var result = Utils.evaluate(compile_expression(entries), ['ANS'], [Database.data.previous_result])
 				
 				if result != null:
-					previous_result = result
+					Database.data.previous_result = result
+					Database.save_data()
 				
 				result_line.text = str(result)
 			Global.OPTIONS.OFF:
 				get_tree().quit()
 			Global.OPTIONS.ARCSINE:
-				entries.value.append(Entry.new(Global.TYPE.FUNCTION, 'asin('))
+				entries.value.append(Entry.new(Global.ENTRY_TYPES.FUNCTION, 'asin('))
 			Global.OPTIONS.ARCCOSINE:
-				entries.value.append(Entry.new(Global.TYPE.FUNCTION, 'acos('))
+				entries.value.append(Entry.new(Global.ENTRY_TYPES.FUNCTION, 'acos('))
 			Global.OPTIONS.ARCTANGENT:
-				entries.value.append(Entry.new(Global.TYPE.FUNCTION, 'atan('))
+				entries.value.append(Entry.new(Global.ENTRY_TYPES.FUNCTION, 'atan('))
 			Global.OPTIONS.RANDOM:
-				entries.value.append(Entry.new(Global.TYPE.FUNCTION, 'randf()'))
+				entries.value.append(Entry.new(Global.ENTRY_TYPES.FUNCTION, 'randf()'))
 			Global.OPTIONS.RANDOM_INTEGER:
-				entries.value.append(Entry.new(Global.TYPE.FUNCTION, 'randi_range('))
+				entries.value.append(Entry.new(Global.ENTRY_TYPES.FUNCTION, 'randi_range('))
 			Global.OPTIONS.COMMA:
-				entries.value.append(Entry.new(Global.TYPE.OPERATOR, ','))
+				entries.value.append(Entry.new(Global.ENTRY_TYPES.OPERATOR, ','))
 			Global.OPTIONS.PI:
-				entries.value.append(Entry.new(Global.TYPE.CONSTANT, 'PI'))
+				entries.value.append(Entry.new(Global.ENTRY_TYPES.CONSTANT, {display = 'π', value = 'PI'}))
 			Global.OPTIONS.POWER_OF_THREE:
-				entries.value.append(Entry.new(Global.TYPE.POWER, {
-					base = Entry.new(Global.TYPE.ENTRIES, [Entry.new()]),
-					exponent = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.NUMBER, '3')])
+				entries.value.append(Entry.new(Global.ENTRY_TYPES.POWER, {
+					base = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new()]),
+					exponent = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new(Global.ENTRY_TYPES.NUMBER, '3')])
 				}))
 			Global.OPTIONS.ABSOLUTE:
-				entries.value.append(Entry.new(Global.TYPE.MODULUS, {arg = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.NUMBER, '-15')])}))
+				entries.value.append(Entry.new(Global.ENTRY_TYPES.MODULUS, {arg = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new(Global.ENTRY_TYPES.NUMBER, '-15')])}))
 			Global.OPTIONS.FACTORIAL:
-				entries.value.append(Entry.new(Global.TYPE.FACTORIAL, {arg = Entry.new(Global.TYPE.ENTRIES, [Entry.new()])}))
+				entries.value.append(Entry.new(Global.ENTRY_TYPES.FACTORIAL, {arg = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new()])}))
 			Global.OPTIONS.LOG:
-				entries.value.append(Entry.new(Global.TYPE.FUNCTION, 'log_with_base(10,'))
+				entries.value.append(Entry.new(Global.ENTRY_TYPES.FUNCTION, 'log_with_base(10,'))
 			Global.OPTIONS.PERMUTATION, Global.OPTIONS.COMBINATION:
-				var entry_type: Global.TYPE = Global.TYPE.PERMUTATION
+				var entry_type: Global.ENTRY_TYPES = Global.ENTRY_TYPES.PERMUTATION
 				
 				match option:
 					Global.OPTIONS.COMBINATION:
-						entry_type = Global.TYPE.COMBINATION
+						entry_type = Global.ENTRY_TYPES.COMBINATION
 				
 				if entries.value.size() > 1:
 					var last_entry: Entry = entries.value[entries.value.size() - 1]
 					
 					entries.value.pop_back()
 					entries.value.append(Entry.new(entry_type, {
-						n = Entry.new(Global.TYPE.ENTRIES, [last_entry]),
-						r = Entry.new(Global.TYPE.ENTRIES, [Entry.new()])
+						n = Entry.new(Global.ENTRY_TYPES.ENTRIES, [last_entry]),
+						r = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new()])
 					}))
 				else:
 					entries.value.append(Entry.new(entry_type, {
-						n = Entry.new(Global.TYPE.ENTRIES, [Entry.new()]),
-						r = Entry.new(Global.TYPE.ENTRIES, [Entry.new()])
+						n = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new()]),
+						r = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new()])
 					}))
 			Global.OPTIONS.CONSTANT:
-				page = Global.PAGES.CONSTANT_CATEGORY
+				tab = Global.TABS.CONSTANT_CATEGORY
 	
-	display()
 	print(Utils.json(entries))
+	display()
 
 func refresh_keyboard() -> void:
 	if keyboard_container.get_child_count() > 0:
@@ -229,14 +229,14 @@ func get_current_entry() -> Entry:
 				current_entry = entries.value[input_cursor_coord]
 			else:
 				match current_entry.type:
-					Global.TYPE.NUMBER:
+					Global.ENTRY_TYPES.NUMBER:
 						pass
 					_:
 						current_entry = current_entry.value[input_cursor_coord]
 	
 	return current_entry
 
-func create_common_entry(type: Global.TYPE, value: String) -> void:
+func create_common_entry(type: Global.ENTRY_TYPES, value: String) -> void:
 	if entries.value.size() > 1:
 		var current_entry: Entry = get_current_entry()
 		var input_cursor_coords: Array = Utils.get_input_cursor_coords(Ref.new(input_cursor_position), entries)
@@ -251,10 +251,10 @@ func create_common_entry(type: Global.TYPE, value: String) -> void:
 		
 		#print(current_entry)
 		match current_entry.type:
-			Global.TYPE.PLACEHOLDER:
+			Global.ENTRY_TYPES.PLACEHOLDER:
 				current_entry.type = type
 				current_entry.value = value
-			Global.TYPE.NUMBER:
+			Global.ENTRY_TYPES.NUMBER:
 				var slice_target = outer_entry.value
 				
 				match typeof(slice_target):
@@ -277,16 +277,16 @@ func create_common_entry(type: Global.TYPE, value: String) -> void:
 							outer_entry = outer_entry.value[input_cursor_coord]
 					
 					outer_entry.value.pop_at(outer_entries_index)
-					outer_entry.value.insert(outer_entries_index, Entry.new(Global.TYPE.NUMBER, sliced_text[0]))
+					outer_entry.value.insert(outer_entries_index, Entry.new(Global.ENTRY_TYPES.NUMBER, sliced_text[0]))
 					outer_entry.value.insert(outer_entries_index + 1, Entry.new(type, value))
 					if sliced_text.size() > 1:
-						outer_entry.value.insert(outer_entries_index + 2, Entry.new(Global.TYPE.NUMBER, sliced_text[1]))
+						outer_entry.value.insert(outer_entries_index + 2, Entry.new(Global.ENTRY_TYPES.NUMBER, sliced_text[1]))
 				else:
 					entries.value.pop_at(outer_entries_index)
-					entries.value.insert(outer_entries_index, Entry.new(Global.TYPE.NUMBER, sliced_text[0]))
+					entries.value.insert(outer_entries_index, Entry.new(Global.ENTRY_TYPES.NUMBER, sliced_text[0]))
 					entries.value.insert(outer_entries_index + 1, Entry.new(type, value))
 					if sliced_text.size() > 1:
-						entries.value.insert(outer_entries_index + 2, Entry.new(Global.TYPE.NUMBER, sliced_text[1]))
+						entries.value.insert(outer_entries_index + 2, Entry.new(Global.ENTRY_TYPES.NUMBER, sliced_text[1]))
 			_:
 				if outer_entry == null:
 					entries.value.insert(slice_position + 1, Entry.new(type, value))
@@ -299,7 +299,7 @@ func create_common_entry(type: Global.TYPE, value: String) -> void:
 
 func create_power_entry(value: String) -> void:
 	var current_entry: Entry = get_current_entry()
-	var power_entry: Entry = Entry.new(Global.TYPE.NUMBER, value)
+	var power_entry: Entry = Entry.new(Global.ENTRY_TYPES.NUMBER, value)
 	var spacing: int = 0
 	
 	match value:
@@ -321,7 +321,7 @@ func create_power_entry(value: String) -> void:
 				outer_entry = outer_entry.value[input_cursor_coord]
 		
 		match current_entry.type:
-			Global.TYPE.NUMBER:
+			Global.ENTRY_TYPES.NUMBER:
 				var slice_target = outer_entry.value
 				
 				match typeof(slice_target):
@@ -344,39 +344,39 @@ func create_power_entry(value: String) -> void:
 							outer_entry = outer_entry.value[input_cursor_coord]
 					
 					outer_entry.value.pop_at(outer_entries_index)
-					outer_entry.value.insert(outer_entries_index, Entry.new(Global.TYPE.POWER, {base = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.NUMBER, sliced_text[0])]), exponent = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.PLAIN_PLACEHOLDER), power_entry])}))
+					outer_entry.value.insert(outer_entries_index, Entry.new(Global.ENTRY_TYPES.POWER, {base = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new(Global.ENTRY_TYPES.NUMBER, sliced_text[0])]), exponent = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new(Global.ENTRY_TYPES.PLAIN_PLACEHOLDER), power_entry])}))
 					if sliced_text.size() > 1:
-						outer_entry.value.insert(outer_entries_index + 1, Entry.new(Global.TYPE.NUMBER, sliced_text[1]))
-						outer_entry.value.insert(outer_entries_index + 2, Entry.new(Global.TYPE.PLAIN_PLACEHOLDER))
+						outer_entry.value.insert(outer_entries_index + 1, Entry.new(Global.ENTRY_TYPES.NUMBER, sliced_text[1]))
+						outer_entry.value.insert(outer_entries_index + 2, Entry.new(Global.ENTRY_TYPES.PLAIN_PLACEHOLDER))
 					else:
-						outer_entry.value.insert(outer_entries_index + 1, Entry.new(Global.TYPE.PLAIN_PLACEHOLDER))
+						outer_entry.value.insert(outer_entries_index + 1, Entry.new(Global.ENTRY_TYPES.PLAIN_PLACEHOLDER))
 				else:
 					entries.value.pop_at(outer_entries_index)
-					entries.value.insert(outer_entries_index, Entry.new(Global.TYPE.POWER, {base = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.NUMBER, sliced_text[0])]), exponent = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.PLAIN_PLACEHOLDER), power_entry])}))
+					entries.value.insert(outer_entries_index, Entry.new(Global.ENTRY_TYPES.POWER, {base = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new(Global.ENTRY_TYPES.NUMBER, sliced_text[0])]), exponent = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new(Global.ENTRY_TYPES.PLAIN_PLACEHOLDER), power_entry])}))
 					if sliced_text.size() > 1:
-						entries.value.insert(outer_entries_index + 1, Entry.new(Global.TYPE.NUMBER, sliced_text[1]))
-						entries.value.insert(outer_entries_index + 2, Entry.new(Global.TYPE.PLAIN_PLACEHOLDER))
+						entries.value.insert(outer_entries_index + 1, Entry.new(Global.ENTRY_TYPES.NUMBER, sliced_text[1]))
+						entries.value.insert(outer_entries_index + 2, Entry.new(Global.ENTRY_TYPES.PLAIN_PLACEHOLDER))
 					else:
-						entries.value.insert(outer_entries_index + 1, Entry.new(Global.TYPE.PLAIN_PLACEHOLDER))
+						entries.value.insert(outer_entries_index + 1, Entry.new(Global.ENTRY_TYPES.PLAIN_PLACEHOLDER))
 				
 				input_cursor_position += spacing
 			_:
 				if input_cursor_coords.size() - 1 > 0:
-					outer_entry.value.insert(slice_position + 1, Entry.new(Global.TYPE.POWER, {
-						base = Entry.new(Global.TYPE.ENTRIES, [Entry.new()]),
-						exponent = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.PLAIN_PLACEHOLDER), power_entry])
+					outer_entry.value.insert(slice_position + 1, Entry.new(Global.ENTRY_TYPES.POWER, {
+						base = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new()]),
+						exponent = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new(Global.ENTRY_TYPES.PLAIN_PLACEHOLDER), power_entry])
 					}))
-					outer_entry.value.insert(slice_position + 2, Entry.new(Global.TYPE.PLAIN_PLACEHOLDER))
+					outer_entry.value.insert(slice_position + 2, Entry.new(Global.ENTRY_TYPES.PLAIN_PLACEHOLDER))
 				else:
-					entries.value.insert(slice_position + 1, Entry.new(Global.TYPE.POWER, {
-						base = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.PLAIN_PLACEHOLDER), Entry.new()]),
-						exponent = Entry.new(Global.TYPE.ENTRIES, [power_entry])
+					entries.value.insert(slice_position + 1, Entry.new(Global.ENTRY_TYPES.POWER, {
+						base = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new(Global.ENTRY_TYPES.PLAIN_PLACEHOLDER), Entry.new()]),
+						exponent = Entry.new(Global.ENTRY_TYPES.ENTRIES, [power_entry])
 					}))
-					entries.value.insert(slice_position + 2, Entry.new(Global.TYPE.PLAIN_PLACEHOLDER))
+					entries.value.insert(slice_position + 2, Entry.new(Global.ENTRY_TYPES.PLAIN_PLACEHOLDER))
 	else:
-		entries.value.append(Entry.new(Global.TYPE.POWER, {
-			base = Entry.new(Global.TYPE.ENTRIES, [Entry.new()]),
-			exponent = Entry.new(Global.TYPE.ENTRIES, [Entry.new(Global.TYPE.PLAIN_PLACEHOLDER), power_entry])
+		entries.value.append(Entry.new(Global.ENTRY_TYPES.POWER, {
+			base = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new()]),
+			exponent = Entry.new(Global.ENTRY_TYPES.ENTRIES, [Entry.new(Global.ENTRY_TYPES.PLAIN_PLACEHOLDER), power_entry])
 		}))
 		input_cursor_position += 1
 
@@ -386,14 +386,14 @@ func create_number_entry(value: String) -> void:
 		var input_cursor_coords: Array = Utils.get_input_cursor_coords(Ref.new(input_cursor_position), entries)
 		
 		match current_entry.type:
-			Global.TYPE.PLACEHOLDER:
-				current_entry.type = Global.TYPE.NUMBER
+			Global.ENTRY_TYPES.PLACEHOLDER:
+				current_entry.type = Global.ENTRY_TYPES.NUMBER
 				current_entry.value = value
-			Global.TYPE.NUMBER, _:
+			Global.ENTRY_TYPES.NUMBER, _:
 				var insert_position: int = input_cursor_coords.pop_back() + 1
 				
 				match current_entry.type:
-					Global.TYPE.NUMBER:
+					Global.ENTRY_TYPES.NUMBER:
 						current_entry.value = current_entry.value.insert(insert_position, value)
 					_:
 						if input_cursor_coords.size() - 1 > 0:
@@ -405,13 +405,13 @@ func create_number_entry(value: String) -> void:
 								else:
 									entries_handler = entries_handler.value[input_cursor_coord]
 							
-							entries_handler.value.insert(insert_position, Entry.new(Global.TYPE.NUMBER, value))
+							entries_handler.value.insert(insert_position, Entry.new(Global.ENTRY_TYPES.NUMBER, value))
 						else:
-							entries.value.insert(insert_position, Entry.new(Global.TYPE.NUMBER, value))
+							entries.value.insert(insert_position, Entry.new(Global.ENTRY_TYPES.NUMBER, value))
 				
 				input_cursor_position += 1
 	else:
-		entries.value.append(Entry.new(Global.TYPE.NUMBER, value))
+		entries.value.append(Entry.new(Global.ENTRY_TYPES.NUMBER, value))
 		input_cursor_position += 1
 
 @onready var calculator_size: Vector2 = size
@@ -426,7 +426,7 @@ func construct_calculator(keyboard) -> void:
 			var calculator_cell: Button = Button.new()
 			var font_variation: FontVariation = FontVariation.new()
 			
-			font_variation.base_font = Global.FONT
+			font_variation.base_font = Global.DEFAULT_FONT
 			
 			calculator_cell.add_theme_font_override('font', font_variation)
 			calculator_cell.add_theme_font_size_override('font_size', 20)
@@ -438,14 +438,14 @@ func construct_calculator(keyboard) -> void:
 		
 		keyboard_container.add_child(calculator_row)
 
-func compile_expression(expression_entries: Entry) -> String:
+func compile_expression(expression_entries: Entry):
 	var expression: String = ''
 	
 	match expression_entries.type:
-		Global.TYPE.ENTRIES:
+		Global.ENTRY_TYPES.ENTRIES:
 			for entry in expression_entries.value:
 				match entry.type:
-					Global.TYPE.OPERATOR:
+					Global.ENTRY_TYPES.OPERATOR:
 						match entry.value:
 							'×':
 								expression += '*'
@@ -453,50 +453,59 @@ func compile_expression(expression_entries: Entry) -> String:
 								expression += '/'
 							_:
 								expression += entry.value
-					Global.TYPE.POWER:
+					Global.ENTRY_TYPES.POWER:
 						var base = entry.value.base
 						var exponent = entry.value.exponent
 						
 						expression += 'pow({base}, {exponent})'.format({base = compile_expression(base), exponent = compile_expression(exponent)})
-					Global.TYPE.LOGARITHM:
+					Global.ENTRY_TYPES.LOGARITHM:
 						var base = entry.value.base
 						var argument = entry.value.argument
 						
 						expression += 'log_with_base({base}, {value})'.format({base = compile_expression(base), value = compile_expression(argument)})
-					Global.TYPE.NUMBER:
+					Global.ENTRY_TYPES.NUMBER:
 						if '.' not in entry.value:
 							expression += entry.value + '.0'
 						else:
 							expression += entry.value
-					Global.TYPE.PERMUTATION, Global.TYPE.COMBINATION:
+					Global.ENTRY_TYPES.PERMUTATION, Global.ENTRY_TYPES.COMBINATION:
 						var n = entry.value.n
 						var r = entry.value.r
 						
 						match entry.type:
-							Global.TYPE.PERMUTATION:
+							Global.ENTRY_TYPES.PERMUTATION:
 								expression += 'permutation({n}, {r})'.format({n = compile_expression(n), r = compile_expression(r)})
-							Global.TYPE.COMBINATION:
+							Global.ENTRY_TYPES.COMBINATION:
 								expression += 'combination({n}, {r})'.format({n = compile_expression(n), r = compile_expression(r)})
-					Global.TYPE.MODULUS:
+					Global.ENTRY_TYPES.MODULUS:
 						var arg = entry.value.arg
 						
 						expression += 'abs({arg})'.format({arg = compile_expression(arg)})
-					Global.TYPE.FACTORIAL:
+					Global.ENTRY_TYPES.FACTORIAL:
 						var arg = entry.value.arg
 						
 						expression += 'factorial({arg})'.format({arg = compile_expression(arg)})
-					Global.TYPE.PLAIN_PLACEHOLDER:
+					Global.ENTRY_TYPES.PLAIN_PLACEHOLDER:
 						pass
-					Global.TYPE.FRACTION:
+					Global.ENTRY_TYPES.FRACTION:
 						var numerator = entry.value.numerator
 						var denominator = entry.value.denominator
 						
 						expression += '{numerator}/{denominator}'.format({numerator = compile_expression(numerator), denominator = compile_expression(denominator)})
-					Global.TYPE.SQUARE_ROOT:
+					Global.ENTRY_TYPES.SQUARE_ROOT:
 						var index = entry.value.index
 						var radicand = entry.value.radicand
 						
 						expression += 'pow({radicand},1/{index})'.format({index = compile_expression(index), radicand = compile_expression(radicand)})
+					Global.ENTRY_TYPES.CONSTANT:
+						var callback_value: String = str(entry.value.value)
+						
+						if 'exp' in entry.value:
+							var exponent_value: String = str(entry.value.exp)
+							
+							expression += '{base}e{exponent}'.format({base = callback_value, exponent = exponent_value})
+						else:
+							expression += str(callback_value)
 					_:
 						expression += str(entry.value)
 		_:
@@ -581,8 +590,8 @@ func primary_display(input_cursor_position_counter: Ref, height: int, cursor_ali
 func display():
 	Utils.remove_children(scroll_container) #refresh()
 	
-	match page:
-		Global.PAGES.MAIN:
+	match tab:
+		Global.TABS.MAIN:
 			var entries_line: HBoxContainer = HBoxContainer.new()
 			var entry_components: Array[Node] = secondary_display(entries)
 			
@@ -594,7 +603,7 @@ func display():
 					entries_line.add_child(entry_component)
 			
 			scroll_container.add_child(entries_line)
-		Global.PAGES.CONSTANT_CATEGORY:
+		Global.TABS.CONSTANT_CATEGORY:
 			var constant_categories_container: VBoxContainer = VBoxContainer.new()
 			
 			constant_categories_container.add_theme_constant_override('separation', 0)
@@ -603,7 +612,7 @@ func display():
 				var constant_category_name: String = Global.CONSTANTS.keys()[constant_category_index].capitalize()
 				var constant_category_button: Button = Button.new()
 				
-				constant_category_button.add_theme_font_override('font', Global.FONT)
+				constant_category_button.add_theme_font_override('font', Global.DEFAULT_FONT)
 				constant_category_button.add_theme_font_size_override('font_size', 20)
 				constant_category_button.flat = true
 				constant_category_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -612,7 +621,7 @@ func display():
 				constant_categories_container.add_child(constant_category_button)
 			
 			scroll_container.add_child(constant_categories_container)
-		Global.PAGES.CONSTANT:
+		Global.TABS.CONSTANT:
 			match constant_category:
 				Global.CONSTANT_CATEGORIES.NULL:
 					pass
@@ -631,18 +640,20 @@ func display():
 							var constant: Dictionary = constant_props.value
 							var constant_button: Button = Button.new()
 							
-							constant_button.add_theme_font_override('font', Global.FONT)
+							constant_button.add_theme_font_override('font', Global.DEFAULT_FONT)
 							constant_button.add_theme_font_size_override('font_size', 20)
 							constant_button.flat = true
 							constant_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 							constant_button.custom_minimum_size = Vector2(250, 0)
 							constant_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 							constant_button.text = constant.display + ', ' + constant_name
-							
-							if 'exp' in constant:
-								constant_button.pressed.connect(print.bind('IN1'))
-							else:
-								constant_button.pressed.connect(print.bind('IN2'))
+							constant_button.pressed.connect(
+								func():
+									entries.value.append(Entry.new(Global.ENTRY_TYPES.CONSTANT, constant_props.value))
+									tab = Global.TABS.MAIN
+									
+									display()
+							)
 							
 							group_container.add_child(constant_button)
 						
@@ -651,7 +662,7 @@ func display():
 					scroll_container.add_child(constants_container)
 
 func set_constant_category(category: Global.CONSTANT_CATEGORIES):
-	page = Global.PAGES.CONSTANT
+	tab = Global.TABS.CONSTANT
 	constant_category = category
 	
 	display()
@@ -663,12 +674,12 @@ func secondary_display(expression_entries: Entry, height: int = 0, input_cursor_
 		var entry: Entry = expression_entries.value[entry_index]
 		
 		match entry.type:
-			Global.TYPE.PLAIN_PLACEHOLDER:
+			Global.ENTRY_TYPES.PLAIN_PLACEHOLDER:
 				entry_components.append(primary_display(input_cursor_position_counter, height, ALIGNMENT.BEGIN))
-			Global.TYPE.NUMBER:
+			Global.ENTRY_TYPES.NUMBER:
 				for digit in entry.value:
 					entry_components.append(primary_display(input_cursor_position_counter, height, ALIGNMENT.END, digit))
-			Global.TYPE.POWER:
+			Global.ENTRY_TYPES.POWER:
 				var base: Entry = entry.value.base
 				var exponent = entry.value.exponent
 				
@@ -679,7 +690,7 @@ func secondary_display(expression_entries: Entry, height: int = 0, input_cursor_
 					_:
 						entry_components.append_array(secondary_display(base, height, input_cursor_position_counter))
 						entry_components.append_array(secondary_display(exponent, height + 20, input_cursor_position_counter))
-			Global.TYPE.PLACEHOLDER:
+			Global.ENTRY_TYPES.PLACEHOLDER:
 				var placeholder_label: Label = Utils.create_label()
 				var placeholder_style: StyleBoxFlat = StyleBoxFlat.new()
 				
@@ -712,7 +723,7 @@ func secondary_display(expression_entries: Entry, height: int = 0, input_cursor_
 				#print('IN')
 				
 				render_input_cursor(placeholder_label, ALIGNMENT.CENTER, input_cursor_position_counter)
-			Global.TYPE.LOGARITHM:
+			Global.ENTRY_TYPES.LOGARITHM:
 				var base = entry.value.base
 				var argument = entry.value.argument
 				var log_label: Label = Utils.create_label()
@@ -725,7 +736,7 @@ func secondary_display(expression_entries: Entry, height: int = 0, input_cursor_
 				entry_components.append(log_label)
 				entry_components.append_array(secondary_display(base, -50, input_cursor_position_counter))
 				entry_components.append_array(secondary_display(argument, 0, input_cursor_position_counter))
-			Global.TYPE.SQUARE_ROOT:
+			Global.ENTRY_TYPES.SQUARE_ROOT:
 				var radical_symbol: HBoxContainer = RADICAL_SYMBOL_PACKED_SCENE.instantiate()
 				var index: Entry = entry.value.index
 				var radicand: Entry = entry.value.radicand
@@ -733,7 +744,7 @@ func secondary_display(expression_entries: Entry, height: int = 0, input_cursor_
 				radical_symbol.add_index_nodes.call_deferred(secondary_display(index, 0, input_cursor_position_counter))
 				radical_symbol.add_radicand_nodes.call_deferred(secondary_display(radicand, 0, input_cursor_position_counter))
 				entry_components.append(radical_symbol)
-			Global.TYPE.FRACTION:
+			Global.ENTRY_TYPES.FRACTION:
 				var fraction_container: VBoxContainer = VBoxContainer.new()
 				var fraction_bar: ColorRect = ColorRect.new()
 				
@@ -754,7 +765,7 @@ func secondary_display(expression_entries: Entry, height: int = 0, input_cursor_
 						fraction_container.add_child(fraction_bar)
 				
 				entry_components.append(fraction_container)
-			Global.TYPE.FUNCTION, Global.TYPE.CONSTANT:
+			Global.ENTRY_TYPES.FUNCTION, Global.ENTRY_TYPES.CONSTANT:
 				var entry_label: Label = Utils.create_label()
 				
 				match height:
@@ -767,28 +778,31 @@ func secondary_display(expression_entries: Entry, height: int = 0, input_cursor_
 						entry_label.custom_minimum_size = Vector2(0, abs(height))
 						entry_label.add_theme_font_size_override('font_size', 20)
 				
-				match entry.value:
-					'asin(':
-						entry_label.text = 'sin⁻¹('
-					'acos(':
-						entry_label.text = 'cos⁻¹('
-					'atan(':
-						entry_label.text = 'tan⁻¹('
-					'randf()':
-						entry_label.text = 'Ran#'
-					'randi_range(':
-						entry_label.text = 'RandInt#('
-					'PI':
-						entry_label.text = 'π'
-					'log_with_base(10,':
-						entry_label.text = 'log('
-					_:
-						entry_label.text = entry.value
+				match typeof(entry.value):
+					TYPE_STRING:
+						match entry.value:
+							'asin(':
+								entry_label.text = 'sin⁻¹('
+							'acos(':
+								entry_label.text = 'cos⁻¹('
+							'atan(':
+								entry_label.text = 'tan⁻¹('
+							'randf()':
+								entry_label.text = 'Ran#'
+							'randi_range(':
+								entry_label.text = 'RandInt#('
+							'log_with_base(10,':
+								entry_label.text = 'log('
+							_:
+								entry_label.text = entry.value
+					TYPE_DICTIONARY:
+						print(entry.value)
+						entry_label.text = entry.value.display
 				
 				input_cursor_position_counter.value += 1
 				render_input_cursor(entry_label, ALIGNMENT.END, input_cursor_position_counter)
 				entry_components.append(entry_label)
-			Global.TYPE.PERMUTATION, Global.TYPE.COMBINATION:
+			Global.ENTRY_TYPES.PERMUTATION, Global.ENTRY_TYPES.COMBINATION:
 				var n = entry.value.n
 				var r = entry.value.r
 				
@@ -799,15 +813,15 @@ func secondary_display(expression_entries: Entry, height: int = 0, input_cursor_
 				label.add_theme_font_size_override('font_size', 30)
 				
 				match entry.type:
-					Global.TYPE.PERMUTATION:
+					Global.ENTRY_TYPES.PERMUTATION:
 						label.text = 'P'
-					Global.TYPE.COMBINATION:
+					Global.ENTRY_TYPES.COMBINATION:
 						label.text = 'C'
 				
 				entry_components.append(label)
 				
 				entry_components.append_array(secondary_display(r, -50, input_cursor_position_counter))
-			Global.TYPE.MODULUS:
+			Global.ENTRY_TYPES.MODULUS:
 				var modulus_container: HBoxContainer = HBoxContainer.new()
 				var line: ColorRect = ColorRect.new()
 				
@@ -821,7 +835,7 @@ func secondary_display(expression_entries: Entry, height: int = 0, input_cursor_
 				
 				modulus_container.add_child(line.duplicate())
 				entry_components.append(modulus_container)
-			Global.TYPE.FACTORIAL:
+			Global.ENTRY_TYPES.FACTORIAL:
 				var exclamation_mark_label: Label = Utils.create_label()
 				
 				exclamation_mark_label.text = '!'

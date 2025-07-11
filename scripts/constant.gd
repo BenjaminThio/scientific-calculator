@@ -5,8 +5,6 @@ var constants_container: VBoxContainer = VBoxContainer.new()
 var constant_label: Label = Utils.create_label()
 
 func _ready() -> void:
-	#print(Utils.group([1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 10], 2))
-	
 	var horizontal_container: HBoxContainer = HBoxContainer.new()
 	var constant_categories_container: VBoxContainer = VBoxContainer.new()
 	var placeholder_style: StyleBoxFlat = StyleBoxFlat.new()

@@ -16,24 +16,24 @@ func json(entries: Entry) -> Array:
 		var entry = entries.value[entry_index]
 		
 		match entry.type:
-			Global.TYPE.NUMBER:
-				entries_structure.append({type = Global.TYPE.keys()[entry.type].to_lower(), value = entry.value})
-			Global.TYPE.POWER, Global.TYPE.LOGARITHM, Global.TYPE.SQUARE_ROOT, Global.TYPE.PERMUTATION, Global.TYPE.COMBINATION, Global.TYPE.FRACTION, Global.TYPE.MODULUS:
-				entries_structure.append({type = Global.TYPE.keys()[entry.type].to_lower()})
+			Global.ENTRY_TYPES.NUMBER:
+				entries_structure.append({type = Global.ENTRY_TYPES.keys()[entry.type].to_lower(), value = entry.value})
+			Global.ENTRY_TYPES.POWER, Global.ENTRY_TYPES.LOGARITHM, Global.ENTRY_TYPES.SQUARE_ROOT, Global.ENTRY_TYPES.PERMUTATION, Global.ENTRY_TYPES.COMBINATION, Global.ENTRY_TYPES.FRACTION, Global.ENTRY_TYPES.MODULUS:
+				entries_structure.append({type = Global.ENTRY_TYPES.keys()[entry.type].to_lower()})
 				
 				for component in entry.value:
 					#print(entry.value[component])
 					match entry.value[component].type:
-						Global.TYPE.PLACEHOLDER:
+						Global.ENTRY_TYPES.PLACEHOLDER:
 							entries_structure[entries_structure.size() - 1][component] = null
-						Global.TYPE.NUMBER:
-							entries_structure[entries_structure.size() - 1][component] = {type = Global.TYPE.keys()[entry.type].to_lower(), value = entry.value[component].value}
-						Global.TYPE.ENTRIES:
+						Global.ENTRY_TYPES.NUMBER:
+							entries_structure[entries_structure.size() - 1][component] = {type = Global.ENTRY_TYPES.keys()[entry.type].to_lower(), value = entry.value[component].value}
+						Global.ENTRY_TYPES.ENTRIES:
 							entries_structure[entries_structure.size() - 1][component] = json(entry.value[component])
 						_:
 							printerr('1. ???')
 			_:
-				entries_structure.append({type = Global.TYPE.keys()[entry.type].to_lower(), value = entry.value})
+				entries_structure.append({type = Global.ENTRY_TYPES.keys()[entry.type].to_lower(), value = entry.value})
 	
 	return entries_structure
 
@@ -44,16 +44,16 @@ func count_entries(entries: Entry) -> int:
 		var entry: Entry = entries.value[entry_index]
 		
 		match entry.type:
-			Global.TYPE.NUMBER:
+			Global.ENTRY_TYPES.NUMBER:
 				max_position += entry.value.length()
-			Global.TYPE.POWER, Global.TYPE.LOGARITHM, Global.TYPE.SQUARE_ROOT, Global.TYPE.PERMUTATION, Global.TYPE.COMBINATION, Global.TYPE.FRACTION, Global.TYPE.MODULUS, Global.TYPE.FACTORIAL:
+			Global.ENTRY_TYPES.POWER, Global.ENTRY_TYPES.LOGARITHM, Global.ENTRY_TYPES.SQUARE_ROOT, Global.ENTRY_TYPES.PERMUTATION, Global.ENTRY_TYPES.COMBINATION, Global.ENTRY_TYPES.FRACTION, Global.ENTRY_TYPES.MODULUS, Global.ENTRY_TYPES.FACTORIAL:
 				for component in entry.value:
 					match entry.value[component].type:
-						Global.TYPE.PLACEHOLDER:
+						Global.ENTRY_TYPES.PLACEHOLDER:
 							max_position += 1
-						Global.TYPE.NUMBER:
+						Global.ENTRY_TYPES.NUMBER:
 							max_position += entry.value[component].value.length()
-						Global.TYPE.ENTRIES:
+						Global.ENTRY_TYPES.ENTRIES:
 							max_position += count_entries(entry.value[component])
 						_:
 							printerr('1. ???')
@@ -70,7 +70,7 @@ func evaluate(command: String, variable_names: PackedStringArray = [], variable_
 	var error: Error = expression.parse(command, variable_names)
 	
 	if error != OK:
-		#printerr(expression.get_error_text())
+		printerr(expression.get_error_text())
 		return null
 	
 	var result = expression.execute(variable_values, self)
@@ -82,7 +82,7 @@ func evaluate(command: String, variable_names: PackedStringArray = [], variable_
 			return int(round(result))
 		else:
 			match Global.output_type:
-				Global.OUTPUT_TYPE.FRACTION:
+				Global.OUTPUT_TYPES.FRACTION:
 					if '.' in stringified_result:
 						var split_dot: PackedStringArray = stringified_result.split('.')
 						var test: float = pow(10, split_dot[split_dot.size() - 1].length())
@@ -91,7 +91,7 @@ func evaluate(command: String, variable_names: PackedStringArray = [], variable_
 						return result
 					else:
 						return result
-				Global.OUTPUT_TYPE.DECIMAL:
+				Global.OUTPUT_TYPES.DECIMAL:
 					return result
 	else:
 		return null
@@ -109,7 +109,7 @@ func create_label() -> Label:
 	var label: Label = Label.new()
 	var font_variation: FontVariation = FontVariation.new()
 	
-	font_variation.base_font = Global.FONT
+	font_variation.base_font = Global.DEFAULT_FONT
 	label.add_theme_font_override('font', font_variation)
 	
 	return label
@@ -142,17 +142,17 @@ func get_input_cursor_coords(input_cursor_position_ref: Ref, entries: Entry):
 	for entry_index in range(entries.value.size()):
 		var entry: Entry = entries.value[entry_index]
 		
-		#printt(input_cursor_position_ref.value, entry.value, Global.TYPE.keys()[entry.type])
+		#printt(input_cursor_position_ref.value, entry.value, Global.ENTRY_TYPES.keys()[entry.type])
 		
 		match entry.type:
-			Global.TYPE.NUMBER:
+			Global.ENTRY_TYPES.NUMBER:
 				var digit_index: int = input_cursor_position_ref.value - 1
 				
 				input_cursor_position_ref.value -= entry.value.length()
 				
 				if input_cursor_position_ref.value <= 0:
 					return [entry_index, digit_index]
-			Global.TYPE.POWER, Global.TYPE.LOGARITHM, Global.TYPE.FRACTION, Global.TYPE.SQUARE_ROOT, Global.TYPE.PERMUTATION, Global.TYPE.COMBINATION, Global.TYPE.MODULUS, Global.TYPE.FACTORIAL:
+			Global.ENTRY_TYPES.POWER, Global.ENTRY_TYPES.LOGARITHM, Global.ENTRY_TYPES.FRACTION, Global.ENTRY_TYPES.SQUARE_ROOT, Global.ENTRY_TYPES.PERMUTATION, Global.ENTRY_TYPES.COMBINATION, Global.ENTRY_TYPES.MODULUS, Global.ENTRY_TYPES.FACTORIAL:
 				for component_name in entry.value:
 					var component_value: Entry = entry.value[component_name]
 					var default_coords: Array = [entry_index, component_name]
@@ -170,11 +170,11 @@ func get_input_cursor_coords(input_cursor_position_ref: Ref, entries: Entry):
 	
 	return []
 
-func get_entry_type_name(type: Global.TYPE):
-	return Global.TYPE.keys()[type]
+func get_entry_type_name(type: Global.ENTRY_TYPES):
+	return Global.ENTRY_TYPES.keys()[type]
 
-func get_type_name(type: Global.VARIANT_TYPE):
-	return Global.VARIANT_TYPE.keys()[type]
+func get_type_name(type: Global.VARIANT_TYPES):
+	return Global.Global.VARIANT_TYPES.keys()[type]
 
 func remove_children(node: Node):
 	if node.get_child_count() > 0:
@@ -208,13 +208,13 @@ func dictionary_to_key_value_pairs(dictionary: Dictionary) -> Array[Dictionary]:
 """
 # json
 
-Global.TYPE.MODULUS, Global.TYPE.FACTORIAL:
-	entries_structure.append({type = Global.TYPE.keys()[entry.type].to_lower()})
+Global.ENTRY_TYPES.MODULUS, Global.ENTRY_TYPES.FACTORIAL:
+	entries_structure.append({type = Global.ENTRY_TYPES.keys()[entry.type].to_lower()})
 	
 	match entry.value.type:
-		Global.TYPE.PLACEHOLDER:
+		Global.ENTRY_TYPES.PLACEHOLDER:
 			entries_structure[entries_structure.size() - 1].arg = null
-		Global.TYPE.ENTRIES:
+		Global.ENTRY_TYPES.ENTRIES:
 			entries_structure[entries_structure.size() - 1].arg = json(entry.value)
 		_:
 			printerr('2. ???')
@@ -223,11 +223,11 @@ Global.TYPE.MODULUS, Global.TYPE.FACTORIAL:
 
 # count_entries
 
-Global.TYPE.MODULUS, Global.TYPE.FACTORIAL:
+Global.ENTRY_TYPES.MODULUS, Global.ENTRY_TYPES.FACTORIAL:
 	match entry.value.type:
-		Global.TYPE.PLACEHOLDER:
+		Global.ENTRY_TYPES.PLACEHOLDER:
 			max_position += 1
-		Global.TYPE.ENTRIES:
+		Global.ENTRY_TYPES.ENTRIES:
 			max_position += count_entries(entry.value)
 		_:
 			printerr('2. ???')
@@ -236,7 +236,7 @@ Global.TYPE.MODULUS, Global.TYPE.FACTORIAL:
 
 # get_input_cursor_coords
 
-Global.TYPE.MODULUS, Global.TYPE.FACTORIAL:
+Global.ENTRY_TYPES.MODULUS, Global.ENTRY_TYPES.FACTORIAL:
 	var default_coords: Array = [entry_index]
 	var inner_entry_coords = get_input_cursor_coords(input_cursor_position_ref, entry.value)
 		
