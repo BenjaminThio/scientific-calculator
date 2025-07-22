@@ -7,7 +7,8 @@ var default_data: Dictionary = {
 var data: Dictionary = default_data.duplicate(true)
 
 func _ready() -> void:
-	print(load_data())
+	#print(load_data())
+	pass
 
 func load_data() -> Dictionary:
 	if FileAccess.file_exists(save_path):

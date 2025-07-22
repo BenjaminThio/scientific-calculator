@@ -128,9 +128,9 @@ func permutation(n, r):
 func combination(n, r):
 	return permutation(n, r) / factorial(r)
 
-func slice_text(value: String, slice_position: int) -> Array[String]:
-	var front_split_value = value.substr(0, slice_position + 1)
-	var back_split_value = value.substr(slice_position + 1, value.length())
+func slice_text(value: String, slice_index: int) -> Array[String]:
+	var front_split_value = value.substr(0, slice_index + 1)
+	var back_split_value = value.substr(slice_index + 1, value.length())
 	
 	match back_split_value:
 		'':
@@ -151,7 +151,7 @@ func get_input_cursor_coords(input_cursor_position_ref: Ref, entries: Entry):
 				input_cursor_position_ref.value -= entry.value.length()
 				
 				if input_cursor_position_ref.value <= 0:
-					return [entry_index, digit_index]
+					return [[entry_index, digit_index]]
 			Global.ENTRY_TYPES.POWER, Global.ENTRY_TYPES.LOGARITHM, Global.ENTRY_TYPES.FRACTION, Global.ENTRY_TYPES.SQUARE_ROOT, Global.ENTRY_TYPES.PERMUTATION, Global.ENTRY_TYPES.COMBINATION, Global.ENTRY_TYPES.MODULUS, Global.ENTRY_TYPES.FACTORIAL:
 				for component_name in entry.value:
 					var component_value: Entry = entry.value[component_name]
